@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сурагчийн Цахим Карт & Дүнгийн Систем</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --primary: #4f46e5;
+            --primary-light: #eef2ff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 24px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 1300px; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); overflow: hidden; }
+        
+        /* Дээд таб цэс */
+        .mode-switcher { display: flex; background: #e2e8f0; padding: 6px; gap: 6px; }
+        .tab-btn { flex: 1; padding: 14px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; border-radius: 10px; transition: all 0.2s; color: var(--text-muted); background: none; }
+        .tab-btn.active { background: #fff; color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
+        .view-section { display: none; padding: 24px; }
+        .view-section.active { display: block; }
+
+        /* Багшийн хэсгийн дизайн */
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f1f5f9; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; color: white; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background: var(--primary); }
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); }
+        
+        .table-wrapper { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: center; }
+        th { background: #f1f5f9; font-weight: 700; }
+        td input { width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px; outline: none; font-size: 0.85rem; }
+        td input:focus { border-color: var(--primary); }
+        .w-name { min-width: 160px; text-align: left; }
+        .w-pin { width: 70px; font-weight: bold; text-align: center; color: var(--primary); }
+        .w-score { width: 60px; }
+
+        /* Нэвтрэх хамгаалалтын хайрцаг */
+        .login-box { max-width: 400px; margin: 60px auto; padding: 32px; background: #fff; border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
+        .login-box h2 { margin-bottom: 20px; color: var(--primary); }
+        .login-box select, .login-box input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; outline: none; }
+        
+        /* Сурагчийн хувийн мэдээллийн хуудас */
+        .student-card { background: var(--primary-light); border: 2px solid rgba(79, 70, 229, 0.2); border-radius: 16px; padding: 24px; margin-top: 20px; }
+        .card-title { font-size: 1.6rem; font-weight: 700; color: var(--primary); margin-bottom: 20px; border-bottom: 1px solid rgba(79, 70, 229, 0.2); padding-bottom: 10px; }
+        
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .info-block { background: #fff; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .info-block h3 { font-size: 1rem; color: var(--text-muted); margin-bottom: 10px; font-weight: 700; }
+        .info-block p { font-size: 1.1rem; font-weight: 600; color: var(--text); }
+        
+        .scores-subgrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center; }
+        .score-box { background: var(--bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .score-num { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-top: 4px; }
+        
+        .alert-box { background: #fff5f5; border-left: 4px solid var(--danger); padding: 12px; border-radius: 8px; color: #991b1b; font-weight: 600; }
+        .toast { display: none; position: fixed; top: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; }
+
+        /* Нууц үг солих хэсэг */
+        .pwd-setting { background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: 8px; display: flex; gap: 10px; align-items: center; font-size: 0.85rem; }
+        .pwd-setting input { padding: 6px; border: 1px solid var(--border); border-radius: 4px; outline: none; width: 120px; }
+    </style>
+</head>
+<body>
+
+<div class="toast" id="toast-msg">💾 Мэдээлэл амжилттай хадгалагдлаа!</div>
+
+<div class="container">
+    <div class="mode-switcher">
+        <button id="tab-student" class="tab-btn active" onclick="switchMode('student')">🎓 СУРАГЧИЙН ЦОНХ (Нэвтэрч харах)</button>
+        <button id="tab-teacher" class="tab-btn" onclick="switchMode('teacher')">👨‍🏫 БАГШИЙН ЦОНХ (Аюулгүйн хамгаалалттай)</button>
+    </div>
+
+    <div id="teacher-section" class="view-section">
+        <div class="login-box" id="teacher-login-box">
+            <h2>👨‍🏫 Багшийн нэвтрэх код</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Уг хэсэгт зөвхөн анги удирдсан багш нэвтрэх эрхтэй.</p>
+            <input type="password" id="teacher-main-pwd" placeholder="Багшийн нууц үг оруулах">
+            <button class="btn btn-primary" style="width: 100%; padding: 12px;" onclick="tryTeacherLogin()">Багшийн цонхыг нээх</button>
+            <p id="teacher-login-error" style="color: var(--danger); font-size: 0.85rem; margin-top: 10px; display: none; font-weight: bold;">❌ Багшийн нууц үг буруу байна!</p>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 15px;">(Анхны нууц үг: <b style="color:var(--warning);">teacher123</b>)</p>
+        </div>
+
+        <div id="teacher-data-box" style="display: none;">
+            <div class="header-bar">
+                <div>
+                    <h2>18 Сурагчийн мэдээллийн нэгдсэн сан</h2>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Мэдээллийг шинэчлээд заавал Хадгалах товч дарна уу.</p>
+                </div>
+                
+                <div class="pwd-setting">
+                    <span>🔑 Багшийн нууц үг солих:</span>
+                    <input type="text" id="new-teacher-pwd" placeholder="Шинэ нууц үг">
+                    <button class="btn btn-primary" style="padding: 6px 12px; font-size:0.8rem;" onclick="changeTeacherPassword()">Шинэчлэх</button>
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-danger" onclick="lockTeacherSection()">🔒 Цонхыг түгжих</button>
+                    <button class="btn btn-success" onclick="saveData()">💾 БҮХ МЭДЭЭЛЛИЙГ ХАДГАЛАХ</button>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2">№</th>
+                            <th rowspan="2" style="min-width:180px;">Сурагчийн овог нэр</th>
+                            <th rowspan="2">Нэвтрэх PIN код</th>
+                            <th colspan="3">Улирлын дүн (Оноо)</th>
+                            <th rowspan="2" style="min-width:140px;">Гаргасан амжилт</th>
+                            <th rowspan="2" style="min-width:140px;">Зан төлөв, төлөвшил</th>
+                            <th rowspan="2" style="min-width:120px;">Хамрагддаг дугуйлан</th>
+                            <th rowspan="2" style="min-width:140px;">Анхаарах зүйлс</th>
+                        </tr>
+                        <tr>
+                            <th>1-р улирал</th>
+                            <th>2-р улирал</th>
+                            <th>3-р улирал</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacher-tbody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="student-section" class="view-section active">
+        <div class="login-box" id="login-box">
+            <h2>Сурагчийн нэвтрэх хэсэг</h2>
+            <select id="student-dropdown">
+                <option value="">-- Өөрийн нэрийг сонгоно уу --</option>
+            </select>
+            <input type="password" id="student-pin" placeholder="Багшаас өгсөн 4 оронтой PIN код" maxlength="4">
+            <button class="btn btn-primary" style="width: 100%; padding: 12px;" onclick="tryLogin()">Нэвтэрч харах</button>
+            <p id="login-error" style="color: var(--danger); font-size: 0.85rem; margin-top: 10px; display: none; font-weight: bold;">❌ Нууц код буруу байна!</p>
+        </div>
+
+        <div id="profile-box" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button class="btn btn-primary" onclick="logoutStudent()">⬅️ Системээс гарах</button>
+                <span style="color: var(--success); font-weight: bold;">• Цахим орчинд аюулгүй нэвтэрсэн</span>
+            </div>
+
+            <div class="student-card">
+                <div class="card-title" id="card-student-name">Сурагчийн нэр энд гарна</div>
+                
+                <div class="info-grid">
+                    <div class="info-block">
+                        <h3>📊 СУРЛАГЫН АМЖИЛТ (УЛИРЛЫН ДҮНГҮҮД)</h3>
+                        <div class="scores-subgrid">
+                            <div class="score-box">
+                                <div style="font-size:0.75rem; color:var(--text-muted);">1-р улирал</div>
+                                <div class="score-num" id="card-u1">-</div>
+                            </div>
+                            <div class="score-box">
+                                <div style="font-size:0.75rem; color:var(--text-muted);">2-р улирал</div>
+                                <div class="score-num" id="card-u2">-</div>
+                            </div>
+                            <div class="score-box">
+                                <div style="font-size:0.75rem; color:var(--text-muted);">3-р улирал</div>
+                                <div class="score-num" id="card-u3">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-block">
+                        <h3>🎨 ХАМРАГДДАГ ДУГУЙЛАН, СЕКЦ</h3>
+                        <p id="card-club">Байхгүй</p>
+                    </div>
+
+                    <div class="info-block" style="grid-column: span 2;">
+                        <h3>🏆 ГАРГАСАН АМЖИЛТ, БҮТЭЭЛҮҮД</h3>
+                        <p id="card-achievement" style="color: var(--success);">-</p>
+                    </div>
+
+                    <div class="info-block">
+                        <h3>🌱 ЗАН ТӨЛӨВ, ТӨЛӨВШЛИЙН ТЭМДЭГЛЭЛ</h3>
+                        <p id="card-behavior">-</p>
+                    </div>
+
+                    <div class="info-block">
+                        <h3>⚠️ БАГШААС ӨГӨХ ЗӨВЛӨМЖ, АНХААРАХ ЗҮЙЛ</h3>
+                        <div class="alert-box" id="card-notice">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const TOTAL_STUDENTS = 18;
+    let studentsDatabase = [];
+    let isTeacherAuthenticated = false; // Багш нэвтэрсэн эсэхийг хянах
+
+    // Таб солих
+    function switchMode(mode) {
+        document.getElementById('tab-student').classList.remove('active');
+        document.getElementById('tab-teacher').classList.remove('active');
+        document.getElementById('student-section').classList.remove('active');
+        document.getElementById('teacher-section').classList.remove('active');
+        
+        if(mode === 'teacher') {
+            document.getElementById('tab-teacher').classList.add('active');
+            document.getElementById('teacher-section').classList.add('active');
+            
+            // Хэрэв өмнө нь нэвтрээгүй бол нууц үг нэхэх цонхыг харуулна
+            if(!isTeacherAuthenticated) {
+                document.getElementById('teacher-login-box').style.display = 'block';
+                document.getElementById('teacher-data-box').style.display = 'none';
+                document.getElementById('teacher-main-pwd').value = '';
+                document.getElementById('teacher-login-error').style.display = 'none';
+            }
+        } else {
+            document.getElementById('tab-student').classList.add('active');
+            document.getElementById('student-section').classList.add('active');
+            buildStudentDropdown();
+            logoutStudent();
+        }
+    }
+
+    // БАГШИЙН НЭВТРЭХ ФУНКЦ
+    function tryTeacherLogin() {
+        const enteredPwd = document.getElementById('teacher-main-pwd').value;
+        const savedPwd = localStorage.getItem('teacher_main_password') || 'teacher123'; // Анхны нууц үг
+        const errorMsg = document.getElementById('teacher-login-error');
+
+        if(enteredPwd === savedPwd) {
+            isTeacherAuthenticated = true;
+            errorMsg.style.display = 'none';
+            document.getElementById('teacher-login-box').style.display = 'none';
+            document.getElementById('teacher-data-box').style.display = 'block';
+            document.getElementById('new-teacher-pwd').value = savedPwd;
+        } else {
+            errorMsg.style.display = 'block';
+        }
+    }
+
+    // БАГШИЙН НУУЦ ҮГ СОЛИХ
+    function changeTeacherPassword() {
+        const newPwd = document.getElementById('new-teacher-pwd').value.trim();
+        if(!newPwd) {
+            alert("Нууц үг хоосон байж болохгүй!");
+            return;
+        }
+        localStorage.setItem('teacher_main_password', newPwd);
+        showToast("🔑 Багшийн нэвтрэх нууц үг шинэчлэгдлээ!");
+    }
+
+    // Багшийн цонхыг гар аргаар түгжих
+    function lockTeacherSection() {
+        isTeacherAuthenticated = false;
+        switchMode('student');
+    }
+
+    // Систем ачаалахад 18 сурагчийн мөр үүсгэх
+    function initSystem() {
+        const tbody = document.getElementById('teacher-tbody');
+        tbody.innerHTML = '';
+
+        const saved = localStorage.getItem('class_student_cards_db');
+        if(saved) {
+            studentsDatabase = JSON.parse(saved);
+        } else {
+            for(let i=1; i<=TOTAL_STUDENTS; i++) {
+                studentsDatabase.push({
+                    id: i, name: `Сурагч ${i}`, pin: (1000 + i).toString(),
+                    u1: '', u2: '', u3: '', achievement: '', behavior: '', club: '', notice: ''
+                });
+            }
+        }
+
+        studentsDatabase.forEach((st, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:bold; color:var(--text-muted);">${st.id}</td>
+                <td><input type="text" class="st-name w-name" value="${st.name}"></td>
+                <td><input type="text" class="st-pin w-pin" value="${st.pin}" maxlength="6"></td>
+                <td><input type="number" class="st-u1 w-score" value="${st.u1}" min="0" max="100"></td>
+                <td><input type="number" class="st-u2 w-score" value="${st.u2}" min="0" max="100"></td>
+                <td><input type="number" class="st-u3 w-score" value="${st.u3}" min="0" max="100"></td>
+                <td><input type="text" class="st-ach" value="${st.achievement}"></td>
+                <td><input type="text" class="st-beh" value="${st.behavior}"></td>
+                <td><input type="text" class="st-club" value="${st.club}"></td>
+                <td><input type="text" class="st-not" value="${st.notice}"></td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        buildStudentDropdown();
+    }
+
+    // БАГШИЙН ОРУУЛСАН МЭДЭЭЛЛИЙГ ХАДГАЛАХ
+    function saveData() {
+        const rows = document.querySelectorAll('#teacher-tbody tr');
+        studentsDatabase = [];
+
+        rows.forEach((row, idx) => {
+            studentsDatabase.push({
+                id: idx + 1,
+                name: row.querySelector('.st-name').value.trim() || `Сурагч ${idx+1}`,
+                pin: row.querySelector('.st-pin').value.trim() || (1001+idx).toString(),
+                u1: row.querySelector('.st-u1').value,
+                u2: row.querySelector('.st-u2').value,
+                u3: row.querySelector('.st-u3').value,
+                achievement: row.querySelector('.st-ach').value,
+                behavior: row.querySelector('.st-beh').value,
+                club: row.querySelector('.st-club').value,
+                notice: row.querySelector('.st-not').value
+            });
+        });
+
+        localStorage.setItem('class_student_cards_db', JSON.stringify(studentsDatabase));
+        showToast("💾 Багшийн оруулсан бүх дата амжилттай хадгалагдлаа!");
+    }
+
+    // Түр зуурын мэдэгдэл харуулах
+    function showToast(text) {
+        const toast = document.getElementById('toast-msg');
+        toast.innerText = text;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 2500);
+    }
+
+    // Сурагчийн унждаг цэс
+    function buildStudentDropdown() {
+        const dropdown = document.getElementById('student-dropdown');
+        dropdown.innerHTML = '<option value="">-- Өөрийн нэрийг сонгоно уу --</option>';
+        
+        studentsDatabase.forEach(st => {
+            if(st.name) {
+                const opt = document.createElement('option');
+                opt.value = st.id;
+                opt.innerHTML = st.name;
+                dropdown.appendChild(opt);
+            }
+        });
+    }
+
+    // СУРАГЧ НЭВТРЭХ ФУНКЦ
+    function tryLogin() {
+        const selectedId = document.getElementById('student-dropdown').value;
+        const enteredPin = document.getElementById('student-pin').value.trim();
+        const errorMsg = document.getElementById('login-error');
+
+        if(!selectedId || !enteredPin) {
+            alert("Нэр болон Нууц кодоо оруулна уу!");
+            return;
+        }
+
+        const student = studentsDatabase.find(st => st.id == selectedId);
+
+        if(student && student.pin === enteredPin) {
+            errorMsg.style.display = 'none';
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('profile-box').style.display = 'block';
+
+            document.getElementById('card-student-name').innerText = `🎓 ${student.name} - Хувийн Цахим Карт`;
+            document.getElementById('card-u1').innerText = student.u1 || '-';
+            document.getElementById('card-u2').innerText = student.u2 || '-';
+            document.getElementById('card-u3').innerText = student.u3 || '-';
+            document.getElementById('card-club').innerText = student.club || 'Хамрагддаг дугуйлан байхгүй';
+            document.getElementById('card-achievement').innerText = student.achievement || 'Тэмдэглэгдсэн амжилт байхгүй';
+            document.getElementById('card-behavior').innerText = student.behavior || 'Тэмдэглэл хийгдээгүй';
+            document.getElementById('card-notice').innerText = student.notice || 'Одоогоор онцгой зөвлөмж байхгүй.';
+        } else {
+            errorMsg.style.display = 'block';
+        }
+    }
+
+    function logoutStudent() {
+        document.getElementById('student-pin').value = '';
+        document.getElementById('student-dropdown').value = '';
+        document.getElementById('login-box').style.display = 'block';
+        document.getElementById('profile-box').style.display = 'none';
+        document.getElementById('login-error').style.display = 'none';
+    }
+
+    window.onload = function() {
+        initSystem();
+    };
+</script>
+
+</body>
+</html>
