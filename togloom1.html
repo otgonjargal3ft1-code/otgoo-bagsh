@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Өнгөөр ялгах тоглоом 🎈</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #ff4757;
+            --blue: #1e90ff;
+            --green: #2ed573;
+            --yellow: #ffa502;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #f0fdf4;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .score-board {
+            font-size: 1.2rem;
+            background: #ffffff;
+            padding: 6px 16px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            color: #059669;
+            display: inline-block;
+        }
+
+        .game-zone {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            width: 100%;
+        }
+
+        .ball {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            position: absolute;
+            cursor: grab;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            touch-action: none;
+            z-index: 5;
+        }
+
+        .baskets-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .basket {
+            flex: 1;
+            height: 110px;
+            border-radius: 20px 20px 15px 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            position: relative;
+            border: 4px solid rgba(255,255,255,0.4);
+        }
+
+        .basket.red { background-color: var(--red); }
+        .basket.blue { background-color: var(--blue); }
+        .basket.green { background-color: var(--green); }
+        .basket.yellow { background-color: var(--yellow); }
+
+        .basket-mouth {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 20px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .win-popup {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .win-card {
+            background: white;
+            padding: 30px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            max-width: 300px;
+            width: 80%;
+        }
+
+        .win-card h2 {
+            font-size: 2rem;
+            color: #2ed573;
+            margin-bottom: 15px;
+        }
+
+        .win-card button {
+            background: #2ed573;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            font-size: 1.2rem;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="title">Ижил өнгийг олоорой! 🎈</div>
+        <div class="score-board">Оноо: <span id="score">0</span> / 10</div>
+    </div>
+
+    <div class="game-zone" id="game-zone">
+        </div>
+
+    <div class="baskets-container">
+        <div class="basket red" data-color="red"><div class="basket-mouth"></div>УЛААН</div>
+        <div class="basket blue" data-color="blue"><div class="basket-mouth"></div>ЦЭНХЭР</div>
+        <div class="basket green" data-color="green"><div class="basket-mouth"></div>НОГООН</div>
+        <div class="basket yellow" data-color="yellow"><div class="basket-mouth"></div>ШАР</div>
+    </div>
+
+    <div class="win-popup" id="win-popup">
+        <div class="win-card">
+            <h2>Мундаг байна! 🎉</h2>
+            <p style="margin-bottom: 20px; color: #64748b;">Бүх өнгийг зөв ялгалаа!</p>
+            <button onclick="restartGame()">Дахин тоглох</button>
+        </div>
+    </div>
+
+<script>
+    const colors = ['red', 'blue', 'green', 'yellow'];
+    const emojis = { red: '🍎', blue: '🚙', green: '🐸', yellow: '🍌' };
+    const colorHex = { red: '#ff4757', blue: '#1e90ff', green: '#2ed573', yellow: '#ffa502' };
+    
+    let score = 0;
+    const gameZone = document.getElementById('game-zone');
+    const scoreDisplay = document.getElementById('score');
+    const winPopup = document.getElementById('win-popup');
+    
+    // Дууны системийг хамгийн анх ачаалахад гацаахгүй байхаар тохируулав
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function playTone(freq, type, duration) {
+        initAudio();
+        if (!audioCtx) return;
+        try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        } catch(e) {
+            console.log("Audio error handled");
+        }
+    }
+
+    function createBall() {
+        if(score >= 10) {
+            winPopup.style.display = 'flex';
+            playTone(523.25, 'sine', 0.3);
+            setTimeout(() => playTone(659.25, 'sine', 0.3), 150);
+            setTimeout(() => playTone(783.99, 'sine', 0.5), 300);
+            return;
+        }
+
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        const ball = document.createElement('div');
+        ball.className = 'ball';
+        ball.style.backgroundColor = colorHex[randomColor];
+        ball.innerHTML = emojis[randomColor];
+        ball.setAttribute('data-color', randomColor);
+        
+        // Дэлгэцийн төв хэсэгт байрлуулах
+        ball.style.left = (gameZone.clientWidth / 2 - 45) + 'px';
+        ball.style.top = (gameZone.clientHeight / 2 - 45) + 'px';
+        
+        gameZone.appendChild(ball);
+        setupDragAndDrop(ball);
+    }
+
+    function setupDragAndDrop(ball) {
+        let startX = 0, startY = 0;
+        let origX = 0, origY = 0;
+        
+        ball.addEventListener('touchstart', dragStart, {passive: false});
+        ball.addEventListener('mousedown', dragStart);
+
+        function dragStart(e) {
+            e.preventDefault();
+            initAudio(); // Хуруу хүрэх мөчид дууг идэвхжүүлнэ
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            startX = clientX;
+            startY = clientY;
+            origX = ball.offsetLeft;
+            origY = ball.offsetTop;
+            
+            document.addEventListener('touchmove', dragMove, {passive: false});
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('touchend', dragEnd);
+            document.addEventListener('mouseup', dragEnd);
+        }
+
+        function dragMove(e) {
+            e.preventDefault();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            ball.style.left = (origX + (clientX - startX)) + 'px';
+            ball.style.top = (origY + (clientY - startY)) + 'px';
+        }
+
+        function dragEnd() {
+            document.removeEventListener('touchmove', dragMove);
+            document.removeEventListener('mousemove', dragMove);
+            document.removeEventListener('touchend', dragEnd);
+            document.removeEventListener('mouseup', dragEnd);
+            
+            checkDrop(ball);
+        }
+    }
+
+    function checkDrop(ball) {
+        const ballRect = ball.getBoundingClientRect();
+        const baskets = document.querySelectorAll('.basket');
+        let dropped = false;
+
+        baskets.forEach(basket => {
+            const basketRect = basket.getBoundingClientRect();
+            
+            if (ballRect.right > basketRect.left && 
+                ballRect.left < basketRect.right && 
+                ballRect.bottom > basketRect.top && 
+                ballRect.top < basketRect.bottom) {
+                
+                if (ball.getAttribute('data-color') === basket.getAttribute('data-color')) {
+                    dropped = true;
+                    score++;
+                    scoreDisplay.innerText = score;
+                    playTone(550, 'triangle', 0.15);
+                    ball.remove();
+                    createBall();
+                }
+            }
+        });
+
+        if (!dropped) {
+            playTone(180, 'sawtooth', 0.15);
+            ball.style.transition = 'all 0.2s ease';
+            ball.style.left = (gameZone.clientWidth / 2 - 45) + 'px';
+            ball.style.top = (gameZone.clientHeight / 2 - 45) + 'px';
+            setTimeout(() => { ball.style.transition = 'none'; }, 200);
+        }
+    }
+
+    function restartGame() {
+        score = 0;
+        scoreDisplay.innerText = score;
+        winPopup.style.display = 'none';
+        gameZone.innerHTML = '';
+        createBall();
+    }
+
+    // Дэлгэц бүрэн ачаалж дууссаны дараа бөмбөгийг үүсгэнэ
+    window.onload = () => {
+        createBall();
+    };
+
+    // Дэлгэцийн хэмжээ өөрчлөгдөхөд бөмбөгийг голд нь байлгах
+    window.onresize = () => {
+        const ball = document.querySelector('.ball');
+        if(ball) {
+            ball.style.left = (gameZone.clientWidth / 2 - 45) + 'px';
+            ball.style.top = (gameZone.clientHeight / 2 - 45) + 'px';
+        }
+    };
+</script>
+</body>
+</html>
